@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<screens:WorkspaceScreen xmlns:f="library://ns.feathersui.com/mxml" xmlns:fx="http://ns.adobe.com/mxml/2009"
+                         xmlns:screens="com.steffenl.superpaint.app.screens.*"
+                         xmlns:controls="com.steffenl.superpaint.app.controls.*"
+                         xmlns:drawingboard="com.steffenl.superpaint.app.controls.drawingboard.*">
+    <screens:layout>
+        <f:AnchorLayout/>
+    </screens:layout>
+    <f:LayoutGroup id="drawingBoardContainerLayoutGroup"/>
+    <f:LayoutGroup id="statusBarLayoutGroup">
+        <f:layout>
+            <f:HorizontalLayout/>
+        </f:layout>
+        <!-- Set some text here to make sure automatic layout works. TODO: Find a better way. -->
+        <f:Label id="pointerHoverPositionLabel" text="0x0" paddingRight="10"/>
+        <f:Label id="pointerTouchPositionLabel" paddingRight="10"/>
+    </f:LayoutGroup>
+</screens:WorkspaceScreen>

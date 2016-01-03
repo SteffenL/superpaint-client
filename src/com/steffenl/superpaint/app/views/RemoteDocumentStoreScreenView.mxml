@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<screens:RemoteDocumentStoreScreen xmlns:f="library://ns.feathersui.com/mxml" xmlns:fx="http://ns.adobe.com/mxml/2009"
+                                   xmlns:screens="com.steffenl.superpaint.app.screens.*"
+                                   xmlns:gallery="com.steffenl.superpaint.app.controls.gallery.*">
+    <screens:layout>
+        <f:AnchorLayout/>
+    </screens:layout>
+    <f:ImageLoader id="previewImage"/>
+    <gallery:GalleryList id="galleryList"/>
+</screens:RemoteDocumentStoreScreen>
