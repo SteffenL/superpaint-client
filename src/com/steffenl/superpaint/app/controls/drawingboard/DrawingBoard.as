@@ -45,6 +45,7 @@ public class DrawingBoard extends FeathersControl {
     private var _lastTouchPosition:Point;
     // Persistent texture where we render the temporary canvas to.
     private var _texture:RenderTexture;
+    private var _inputTexture:Texture;
     // Visible canvas presented to the user.
     private var _canvasDisplayImage:Image;
 
@@ -54,6 +55,12 @@ public class DrawingBoard extends FeathersControl {
         // It feels like a really wrong way to do it.
 
         const load:Function = function():void {
+            if (_inputTexture) {
+                _inputTexture.dispose();
+            }
+
+            _inputTexture = texture;
+
             removeChildren(0, numChildren - 1, true);
 
             _canvas = new Shape();
@@ -81,7 +88,7 @@ public class DrawingBoard extends FeathersControl {
             _canvasDisplayImage.addEventListener(TouchEvent.TOUCH, touchHandler);
             addChild(_canvasDisplayImage);
 
-            _canvas.addChild(new Image(texture));
+            _canvas.addChild(new Image(_inputTexture));
             rasterizeCanvasShape();
             updateClipRect();
             loaded.dispatch();
