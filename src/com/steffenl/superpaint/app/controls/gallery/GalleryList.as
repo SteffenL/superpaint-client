@@ -52,7 +52,10 @@ public class GalleryList extends List {
     private function creationCompleteHandler(event:Event):void {
         styleNameList.add(THUMBNAIL_LIST_STYLE_NAME);
         this.layout = createListLayout(layoutInt);
-        horizontalScrollPolicy = List.SCROLL_POLICY_ON;
+
+        horizontalScrollPolicy = this.layoutInt === HORIZONTAL_LAYOUT ? List.SCROLL_POLICY_ON : List.SCROLL_POLICY_OFF;
+        verticalScrollPolicy = this.layoutInt === VERTICAL_LAYOUT ? List.SCROLL_POLICY_ON : List.SCROLL_POLICY_OFF;
+
         snapScrollPositionsToPixels = true;
         itemRendererType = GalleryItemRenderer;
     }
