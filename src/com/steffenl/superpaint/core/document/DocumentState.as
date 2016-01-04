@@ -3,6 +3,6 @@ import flash.display.BitmapData;
 
 // TODO: Decouple
 public class DocumentState {
-    public var textureData:BitmapData;
+    public var bitmapData:BitmapData;
 }
 }

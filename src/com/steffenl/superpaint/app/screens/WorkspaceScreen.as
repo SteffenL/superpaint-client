@@ -35,6 +35,8 @@ import flash.events.Event;
 import flash.geom.*;
 import flash.net.URLRequest;
 
+import starling.core.Starling;
+
 import starling.display.DisplayObject;
 import starling.display.Image;
 
@@ -99,11 +101,9 @@ public class WorkspaceScreen extends PanelScreen {
         drawingBoardContainerLayoutGroup.addChild(drawingBoard);
 
         _drawingBoard = drawingBoard;
-        /*_drawingBoard.loaded.add(function():void {
-            _recordState(texture);
-        });*/
-
-        _recordState(texture);
+        _drawingBoard.ready.add(function():void {
+            _recordState(_drawingBoard.capture());
+        });
     }
 
     private function destroyDrawingBoard():void {
@@ -315,7 +315,7 @@ public class WorkspaceScreen extends PanelScreen {
 
     private function activeToolPickerList_changeHandler(event:starling.events.Event):void {
         var pickerList:PickerList = PickerList(event.currentTarget);
-        if (pickerList.selectedIndex == -1) {
+        if (pickerList.selectedIndex === -1) {
             return;
         }
 
@@ -350,22 +350,21 @@ public class WorkspaceScreen extends PanelScreen {
 
     private function _recordCurrentState():void {
         // TODO: Decouple stuff
-        const texture:Texture = _drawingBoard.getTexture();
-        _recordState(texture);
+        const bitmapData:BitmapData = _drawingBoard.capture();
+        _recordState(bitmapData);
     }
 
-    private function _recordState(texture:Texture):void {
+    private function _recordState(bitmapData:BitmapData):void {
         // TODO: Decouple stuff
-        if (texture) {
+        if (bitmapData) {
             var state:DocumentState = new DocumentState();
-            state.textureData = new BitmapData(texture.width, texture.height);
-            // TODO:
+            state.bitmapData = bitmapData;
             _documentStateManager.push(state);
         }
     }
 
     private function _loadState(state:DocumentState):void {
-        const texture:Texture = Texture.fromBitmapData(state.textureData);
+        const texture:Texture = Texture.fromBitmapData(state.bitmapData);
         _drawingBoard.loadTexture(texture);
     }
 }

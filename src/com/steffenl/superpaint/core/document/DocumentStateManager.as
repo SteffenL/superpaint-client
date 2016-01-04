@@ -8,8 +8,6 @@ import org.osflash.signals.Signal;
 public class DocumentStateManager {
     private static const MAX_STATE_HISTORY:uint = 50;
 
-    //public var added:Signal = new Signal();
-    //public var stepped:Signal = new Signal();
     public var stateChanged:Signal = new Signal(DocumentState);
 
     private var _history:Vector.<DocumentState> = new <DocumentState>[];
@@ -34,13 +32,14 @@ public class DocumentStateManager {
         }
 
         const numEntriesBehind:int = _historyIndex;
-        if (numEntriesBehind > MAX_STATE_HISTORY) {
-            _forgetPast(_historyIndex);
+        if (numEntriesBehind >= MAX_STATE_HISTORY) {
+            _forgetPast(0);
+        }
+        else {
+            ++_historyIndex;
         }
 
         _history.push(state);
-        ++_historyIndex;
-        //added.dispatch();
         stateChanged.dispatch(getState());
     }
 
@@ -73,7 +72,6 @@ public class DocumentStateManager {
         }
 
         --_historyIndex;
-        //stepped.dispatch();
         stateChanged.dispatch(getState());
     }
 
@@ -86,7 +84,6 @@ public class DocumentStateManager {
         }
 
         ++_historyIndex;
-        //stepped.dispatch();
         stateChanged.dispatch(getState());
     }
 
@@ -104,13 +101,13 @@ public class DocumentStateManager {
     }
 
     /**
-     * Forgets all past history until the specified index (exclusive).
+     * Forgets all past history until the specified index (inclusive).
      * @param untilIndex
      */
     private function _forgetPast(untilIndex:int):void {
         _validateHistoryIndex(untilIndex);
         const fromIndex:int = 0;
-        const numEntriesToForget:int = (untilIndex - 1) - fromIndex;
+        const numEntriesToForget:int = untilIndex - fromIndex + 1;
         if (numEntriesToForget > 0) {
             _history.splice(fromIndex, numEntriesToForget);
         }

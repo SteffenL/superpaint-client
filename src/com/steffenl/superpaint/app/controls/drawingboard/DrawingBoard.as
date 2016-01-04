@@ -11,10 +11,16 @@ import com.steffenl.superpaint.core.painting.tools.detail.PencilTool;
 import feathers.core.FeathersControl;
 import feathers.events.FeathersEventType;
 
+import flash.display.BitmapData;
+import flash.display3D.Context3D;
+
 
 import flash.geom.*;
 
 import org.osflash.signals.Signal;
+
+import starling.core.RenderSupport;
+import starling.core.Starling;
 
 import starling.display.*;
 import starling.events.*;
@@ -26,7 +32,8 @@ public class DrawingBoard extends FeathersControl {
     public const touchMoved:Signal = new Signal(Point, Number);
     public const touchEnded:Signal = new Signal(Point, Number);
     public const touchHover:Signal = new Signal(Point);
-    public const loaded:Signal = new Signal();
+    // Dispatched when a texture has been loaded for the first time
+    public const ready:Signal = new Signal();
 
     public function get canvas():Shape {
         return _canvas;
@@ -48,6 +55,7 @@ public class DrawingBoard extends FeathersControl {
     private var _inputTexture:Texture;
     // Visible canvas presented to the user.
     private var _canvasDisplayImage:Image;
+    private var _loadCount:uint = 0;
 
     // TODO: Refactor
     public function loadTexture(texture:Texture):void {
@@ -88,10 +96,16 @@ public class DrawingBoard extends FeathersControl {
             _canvasDisplayImage.addEventListener(TouchEvent.TOUCH, touchHandler);
             addChild(_canvasDisplayImage);
 
-            _canvas.addChild(new Image(_inputTexture));
+            const img:Image = new Image(_inputTexture);
+            img.width = texture.width;
+            img.height = texture.height;
+            _canvas.addChild(img);
             rasterizeCanvasShape();
             updateClipRect();
-            loaded.dispatch();
+
+            if (_loadCount++ === 0) {
+                ready.dispatch();
+            }
         };
 
         if (!isCreated) {
@@ -212,6 +226,37 @@ public class DrawingBoard extends FeathersControl {
         position.x = Math.min(center.x, Math.max(center.x - _texture.width, position.x));
         position.y = Math.min(center.y, Math.max(center.y - _texture.height, position.y));
         return position;
+    }
+
+    public function capture():BitmapData {
+        const context:Context3D = Starling.current.context;
+        context.configureBackBuffer(_texture.width, _texture.height, 0);
+        context.clear();
+
+        const support:RenderSupport = new RenderSupport();
+        const bitmapData:BitmapData = new BitmapData(_texture.width, _texture.height);
+
+        const shape:Shape = new Shape();
+        shape.width = _texture.width;
+        shape.height = _texture.height;
+        const img:Image = new Image(_texture);
+        img.width =_texture.width;
+        img.height = _texture.height;
+        shape.addChild(img);
+
+        support.renderTarget = null;
+        support.setProjectionMatrix(0, 0, _texture.width, _texture.height, _texture.width, _texture.height);
+        support.clear();
+        shape.render(support, 1.0);
+        support.finishQuadBatch();
+        support.dispose();
+
+        context.drawToBitmapData(bitmapData);
+        context.present();
+
+        context.configureBackBuffer(stage.stageWidth, stage.stageHeight, 0);
+
+        return bitmapData;
     }
 }
 }
