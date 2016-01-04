@@ -1,6 +1,7 @@
-package com.steffenl.superpaint.app.controls.toolstyle.detail {
-import com.steffenl.superpaint.app.controls.toolstyle.generic.ColorPicker;
-import com.steffenl.superpaint.app.controls.toolstyle.generic.StrokeStylePicker;
+package com.steffenl.superpaint.app.controls.toolstyle {
+import com.steffenl.superpaint.app.controls.toolstyle.detail.*;
+import com.steffenl.superpaint.app.controls.toolstyle.detail.ColorPicker;
+import com.steffenl.superpaint.app.controls.toolstyle.detail.StrokeStylePicker;
 import com.steffenl.superpaint.core.painting.detail.PaintStyles;
 
 import feathers.controls.Button;
@@ -26,7 +27,7 @@ public class PaintStylePicker extends LayoutGroup {
 
         layout = new VerticalLayout();
 
-        const strokeStylePicker:StrokeStylePicker = new StrokeStylePicker(_paintStyles.strokeWidth);
+        const strokeStylePicker:StrokeStylePicker = new StrokeStylePicker(_paintStyles.strokeWidth, _paintStyles.strokeColor, _paintStyles.strokeAlpha);
         strokeStylePicker.styleChanged.add(function(strokeWidth:Number):void {
             _paintStyles.strokeWidth = strokeWidth;
         });
@@ -36,17 +37,9 @@ public class PaintStylePicker extends LayoutGroup {
         colorPicker.styleChanged.add(function(color:uint, alpha:uint):void {
             _paintStyles.strokeColor = color;
             _paintStyles.strokeAlpha = alpha;
+            strokeStylePicker.setColor(color, alpha);
         });
         addChild(colorPicker);
-
-        const doneButton:Button = new Button();
-        doneButton.label = "Done";
-        doneButton.addEventListener(Event.TRIGGERED, doneButton_triggeredHandler);
-        addChild(doneButton);
-    }
-
-    private function doneButton_triggeredHandler(event:Event):void {
-        done.dispatch();
     }
 }
 }

@@ -5,10 +5,8 @@
 package com.steffenl.superpaint.app.screens {
 
 import com.steffenl.superpaint.app.controls.drawingboard.DrawingBoard;
-import com.steffenl.superpaint.app.controls.toolstyle.detail.PopupPenStylePicker;
-import com.steffenl.superpaint.app.controls.toolstyle.generic.PopupColorPicker;
+import com.steffenl.superpaint.app.controls.toolstyle.PopupPaintStylePicker;
 import com.steffenl.superpaint.app.controls.SpButton;
-import com.steffenl.superpaint.app.controls.toolstyle.generic.PopupStrokeStylePicker;
 import com.steffenl.superpaint.core.document.DocumentState;
 import com.steffenl.superpaint.core.document.DocumentStateManager;
 import com.steffenl.superpaint.core.painting.algorithm.LinearLineAlgorithms;
@@ -305,7 +303,7 @@ public class WorkspaceScreen extends PanelScreen {
     }
 
     private function toolStyleButton_triggeredHandler(event:starling.events.Event):void {
-        var picker:PopupPenStylePicker = new PopupPenStylePicker(_paintStyles);
+        var picker:PopupPaintStylePicker = new PopupPaintStylePicker(_paintStyles);
         picker.show(Button(event.currentTarget));
     }
 

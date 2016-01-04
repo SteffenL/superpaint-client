@@ -1,4 +1,4 @@
-package com.steffenl.superpaint.app.controls.toolstyle.detail {
+package com.steffenl.superpaint.app.controls.toolstyle {
 
 import com.steffenl.superpaint.core.painting.detail.PaintStyles;
 
@@ -10,7 +10,7 @@ import org.osflash.signals.Signal;
 
 import starling.display.DisplayObject;
 
-public class PopupPenStylePicker extends LayoutGroup {
+public class PopupPaintStylePicker extends LayoutGroup {
     public function get done():Signal {
         return _picker.done;
     }
@@ -18,7 +18,7 @@ public class PopupPenStylePicker extends LayoutGroup {
     private var _picker:PaintStylePicker;
     private var _callout:Callout = null;
 
-    public function PopupPenStylePicker(paintStyles:PaintStyles) {
+    public function PopupPaintStylePicker(paintStyles:PaintStyles) {
         _picker = new PaintStylePicker(paintStyles);
         _picker.done.add(function():void {
             close();

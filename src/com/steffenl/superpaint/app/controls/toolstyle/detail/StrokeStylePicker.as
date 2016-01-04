@@ -1,4 +1,4 @@
-package com.steffenl.superpaint.app.controls.toolstyle.generic {
+package com.steffenl.superpaint.app.controls.toolstyle.detail {
 import com.steffenl.superpaint.core.painting.detail.BrushTextureGenerator;
 
 import feathers.controls.Label;
@@ -26,9 +26,13 @@ public class StrokeStylePicker extends LayoutGroup {
     private var _widthLabel:Label;
     private var _brushPreviewImage:Image;
     private var _width:Number;
+    private var _previewColor:uint;
+    private var _previewAlpha:Number;
 
-    public function StrokeStylePicker(initialWidth:Number) {
-        _width = initialWidth;
+    public function StrokeStylePicker(initialWidth:Number, initialColor:uint, initialAlpha:Number) {
+        this._width = initialWidth;
+        this._previewColor = initialColor;
+        this._previewAlpha = initialAlpha;
 
         _widthChanged.add(function(width:Number):void {
             styleChanged.dispatch(width);
@@ -90,8 +94,14 @@ public class StrokeStylePicker extends LayoutGroup {
             _brushPreviewImage.texture.dispose();
         }
 
-        _brushPreviewImage.texture = BrushTextureGenerator.Circle(0xffffff, 1, width / 2);
+        _brushPreviewImage.texture = BrushTextureGenerator.Circle(this._previewColor, this._previewAlpha, width / 2);
         _brushPreviewImage.readjustSize();
+    }
+
+    public function setColor(color:uint, alpha:Number):void {
+        this._previewColor = color;
+        this._previewAlpha = alpha;
+        updateBrushPreview(_width);
     }
 }
 }
