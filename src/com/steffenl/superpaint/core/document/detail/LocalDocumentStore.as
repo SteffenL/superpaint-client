@@ -23,7 +23,8 @@ public class LocalDocumentStore implements IDocumentStore {
         const storeUri:String = getDocumentStoreUri();
         const dir:File = new File(storeUri);
         if (!dir.exists) {
-            throw new Error("Document store does not exist: " + storeUri);
+            //throw new Error("Document store does not exist: " + storeUri);
+            return;
         }
 
         dir.addEventListener(FileListEvent.DIRECTORY_LISTING, function(event:FileListEvent):void {
