@@ -7,9 +7,12 @@ import feathers.controls.Slider;
 import feathers.events.FeathersEventType;
 import feathers.layout.VerticalLayout;
 
+import flash.geom.Point;
+
 import org.osflash.signals.Signal;
 
 import starling.display.Image;
+import starling.display.Quad;
 
 import starling.events.Event;
 import starling.textures.Texture;
@@ -28,6 +31,7 @@ public class StrokeStylePicker extends LayoutGroup {
     private var _width:Number;
     private var _previewColor:uint;
     private var _previewAlpha:Number;
+    private var _previewLayoutGroup:LayoutGroup = new LayoutGroup();
 
     public function StrokeStylePicker(initialWidth:Number, initialColor:uint, initialAlpha:Number) {
         this._width = initialWidth;
@@ -48,7 +52,7 @@ public class StrokeStylePicker extends LayoutGroup {
         updateWidthText(_width);
         addChild(_widthLabel);
 
-        var widthSlider:Slider = new Slider();
+        const widthSlider:Slider = new Slider();
         widthSlider.minimum = MIN_STROKE_WIDTH;
         widthSlider.maximum = MAX_STROKE_WIDTH;
         widthSlider.step = 1;
@@ -60,27 +64,25 @@ public class StrokeStylePicker extends LayoutGroup {
         widthSlider.addEventListener(FeathersEventType.END_INTERACTION, widthSlider_endInteractionHandler);
         addChild(widthSlider);
 
-        var previewLayoutGroup:LayoutGroup = new LayoutGroup();
-
-        previewLayoutGroup.width = MAX_STROKE_WIDTH;
-        previewLayoutGroup.height = MAX_STROKE_WIDTH;
+        /*previewLayoutGroup.width = MAX_STROKE_WIDTH;
+        previewLayoutGroup.height = MAX_STROKE_WIDTH;*/
 
         _brushPreviewImage = new Image(Texture.empty(1, 1));
         updateBrushPreview(_width);
-        previewLayoutGroup.addChild(_brushPreviewImage);
+        _previewLayoutGroup.addChild(_brushPreviewImage);
 
-        addChild(previewLayoutGroup);
+        addChild(_previewLayoutGroup);
     }
 
     private function widthSlider_changeHandler(event:Event):void {
-        var slider:Slider = Slider(event.currentTarget);
+        const slider:Slider = Slider(event.currentTarget);
         updateWidthText(slider.value);
         updateBrushPreview(slider.value);
         _widthChanging.dispatch(width);
     }
 
     private function widthSlider_endInteractionHandler(event:Event):void {
-        var slider:Slider = Slider(event.currentTarget);
+        const slider:Slider = Slider(event.currentTarget);
         _width = slider.value;
         _widthChanged.dispatch(slider.value);
     }
@@ -94,7 +96,11 @@ public class StrokeStylePicker extends LayoutGroup {
             _brushPreviewImage.texture.dispose();
         }
 
-        _brushPreviewImage.texture = BrushTextureGenerator.Circle(this._previewColor, this._previewAlpha, width / 2);
+        _previewLayoutGroup.backgroundSkin = new Quad(1, 1, invertColor(_previewColor));
+
+        const halfWidth:Number = width / 2;
+        const texture:Texture = BrushTextureGenerator.unfoldedCircle(this._previewColor, this._previewAlpha, halfWidth, 200, 100);
+        _brushPreviewImage.texture = texture;
         _brushPreviewImage.readjustSize();
     }
 
@@ -102,6 +108,10 @@ public class StrokeStylePicker extends LayoutGroup {
         this._previewColor = color;
         this._previewAlpha = alpha;
         updateBrushPreview(_width);
+    }
+
+    private function invertColor(color:uint):uint {
+        return 0xffffffff - color;
     }
 }
 }
