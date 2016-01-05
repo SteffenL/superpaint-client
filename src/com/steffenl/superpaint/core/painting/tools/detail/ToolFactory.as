@@ -5,7 +5,6 @@ import com.steffenl.superpaint.core.painting.tools.IToolFactory;
 public class ToolFactory implements IToolFactory {
     public function create():Vector.<ITool> {
         return new <ITool>[
-            new BrushTool(),
             new PencilTool(),
             new FakeTool()
         ];

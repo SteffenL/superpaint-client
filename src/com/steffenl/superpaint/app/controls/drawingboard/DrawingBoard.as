@@ -1,17 +1,11 @@
 package com.steffenl.superpaint.app.controls.drawingboard {
-import com.steffenl.superpaint.app.controls.*;
-import com.steffenl.superpaint.app.controls.SpButton;
-import com.steffenl.superpaint.core.painting.detail.PaintStyles;
-import com.steffenl.superpaint.core.painting.IToolManager;
-import com.steffenl.superpaint.core.painting.detail.DrawingLayer;
-import com.steffenl.superpaint.core.painting.detail.ToolManager;
-import com.steffenl.superpaint.core.painting.tools.ITool;
-import com.steffenl.superpaint.core.painting.tools.detail.PencilTool;
 
+import feathers.controls.TextArea;
 import feathers.core.FeathersControl;
 import feathers.events.FeathersEventType;
 
 import flash.display.BitmapData;
+import flash.display.Shape;
 import flash.display3D.Context3D;
 
 
@@ -21,8 +15,10 @@ import org.osflash.signals.Signal;
 
 import starling.core.RenderSupport;
 import starling.core.Starling;
+import starling.display.Image;
+import starling.display.Quad;
+import starling.display.Shape;
 
-import starling.display.*;
 import starling.events.*;
 import starling.textures.RenderTexture;
 import starling.textures.Texture;
@@ -35,96 +31,82 @@ public class DrawingBoard extends FeathersControl {
     // Dispatched when a texture has been loaded for the first time
     public const ready:Signal = new Signal();
 
-    public function get canvas():Shape {
-        return _canvas;
+    public function get nativeCanvas():flash.display.Shape {
+        return _nativeCanvas;
     }
 
     public static const DEFAULT_CANVAS_REAL_SIZE:Point = new Point(1280, 720);
     private static const CANVAS_BACKGROUND_COLOR:uint = 0xffffff;
 
+    private var _bitmapData:BitmapData;
+    private var _nativeCanvas:flash.display.Shape;
     // Temporary (invisible) canvas that we draw to.
     // This canvas is cleared after being rendered to a persistent texture.
-    private var _canvas:Shape;
+    private var _canvas:starling.display.Shape;
     private var _panOffset:Point = new Point(0, 0);
     private var _canvasRealSize:Point = DEFAULT_CANVAS_REAL_SIZE;
     private var _pan:Boolean = false;
     private var _touchPosition:Point;
     private var _lastTouchPosition:Point;
     // Persistent texture where we render the temporary canvas to.
-    private var _texture:RenderTexture;
-    private var _inputTexture:Texture;
+    //private var _texture:RenderTexture;
+    private var _texture:Texture;
     // Visible canvas presented to the user.
     private var _canvasDisplayImage:Image;
     private var _loadCount:uint = 0;
 
-    // TODO: Refactor
-    public function loadTexture(texture:Texture):void {
-        // Ugly workaround for loading texture before initialization...
-        // It feels like a really wrong way to do it.
 
-        const load:Function = function():void {
-            if (_inputTexture) {
-                _inputTexture.dispose();
-            }
-
-            _inputTexture = texture;
-
-            removeChildren(0, numChildren - 1, true);
-
-            _canvas = new Shape();
-            _canvas.width = texture.width;
-            _canvas.height = texture.height;
-
-            var canvasBackground:Quad = new Quad(texture.width, texture.height, CANVAS_BACKGROUND_COLOR);
-            addChild(canvasBackground);
-
-            if (_texture) {
-                _texture.dispose();
-            }
-
-            _texture = new RenderTexture(texture.width, texture.height);
-
-            if (_canvasDisplayImage) {
-                _canvasDisplayImage.dispose();
-            }
-
-            _canvasDisplayImage = new Image(_texture);
-            _canvasDisplayImage.x = _panOffset.x;
-            _canvasDisplayImage.y = _panOffset.y;
-            _canvasDisplayImage.width = texture.width;
-            _canvasDisplayImage.height = texture.height;
-            _canvasDisplayImage.addEventListener(TouchEvent.TOUCH, touchHandler);
-            addChild(_canvasDisplayImage);
-
-            const img:Image = new Image(_inputTexture);
-            img.width = texture.width;
-            img.height = texture.height;
-            _canvas.addChild(img);
-            rasterizeCanvasShape();
-            updateClipRect();
-
-            if (_loadCount++ === 0) {
-                ready.dispatch();
-            }
-        };
-
-        if (!isCreated) {
-            addEventListener(FeathersEventType.CREATION_COMPLETE, function(event:Event):void {
-                load();
-            });
+    public function loadBitmapData(bitmapData:BitmapData):void {
+        if (_bitmapData) {
+            _bitmapData.dispose();
         }
-        else {
-            load();
+
+        _bitmapData = bitmapData.clone();
+
+        const texture:Texture = Texture.fromBitmapData(_bitmapData);
+        if (_texture) {
+            _texture.dispose();
+        }
+
+        _texture = texture;
+        _canvasRealSize = new Point(_bitmapData.width, _bitmapData.height);
+
+        _nativeCanvas = new flash.display.Shape();
+        _nativeCanvas.width = _canvasRealSize.x;
+        _nativeCanvas.height = _canvasRealSize.y;
+
+        _canvas = new starling.display.Shape();
+        _canvas.width = _canvasRealSize.x;
+        _canvas.height = _canvasRealSize.y;
+        addChild(_canvas);
+
+        var canvasBackground:Quad = new Quad(_canvasRealSize.x, _canvasRealSize.y, CANVAS_BACKGROUND_COLOR);
+        addChild(canvasBackground);
+
+        if (_canvasDisplayImage) {
+            _canvasDisplayImage.dispose();
+        }
+
+        _canvasDisplayImage = new Image(_texture);
+        _canvasDisplayImage.x = _panOffset.x;
+        _canvasDisplayImage.y = _panOffset.y;
+        _canvasDisplayImage.width = _canvasRealSize.x;
+        _canvasDisplayImage.height = _canvasRealSize.y;
+        _canvasDisplayImage.addEventListener(TouchEvent.TOUCH, touchHandler);
+        addChild(_canvasDisplayImage);
+
+        rasterizeCanvasShape();
+        updateClipRect();
+
+        if (_loadCount++ === 0) {
+            ready.dispatch();
         }
     }
 
     // TODO: Refactor
-    public static function createBlankTexture():Texture {
-        return new RenderTexture(DEFAULT_CANVAS_REAL_SIZE.x, DEFAULT_CANVAS_REAL_SIZE.y);
-    }
-
-    public function getTexture():Texture {
-        return _texture;
+    public static function createBlankBitmapData():BitmapData {
+        return new BitmapData(DEFAULT_CANVAS_REAL_SIZE.x, DEFAULT_CANVAS_REAL_SIZE.y);
+        //return new RenderTexture(DEFAULT_CANVAS_REAL_SIZE.x, DEFAULT_CANVAS_REAL_SIZE.y);
     }
 
     protected override function initialize():void {
@@ -208,55 +190,35 @@ public class DrawingBoard extends FeathersControl {
     }
 
     private function rasterizeCanvasShape():void {
-        _texture.draw(_canvas);
-        _canvas.graphics.clear();
+        _bitmapData.draw(_nativeCanvas);
+        _nativeCanvas.graphics.clear();
+
+        if (_texture) {
+            _texture.dispose();
+        }
+
+        _texture = Texture.fromBitmapData(_bitmapData);
+        _canvasDisplayImage.texture = _texture;
     }
 
     private function updateClipRect():void {
         clipRect = new Rectangle(
                 Math.max(0, _panOffset.x),
                 Math.max(0, _panOffset.y),
-                Math.min(_panOffset.x + _texture.width, actualWidth),
-                Math.min(_panOffset.y + _texture.height, actualHeight)
+                Math.min(_panOffset.x + _canvasRealSize.x, actualWidth),
+                Math.min(_panOffset.y + _canvasRealSize.y, actualHeight)
         );
     }
 
     private function sanitizeCanvasPosition(position:Point):Point {
         const center:Point = new Point(actualWidth >> 1, actualHeight >> 1);
-        position.x = Math.min(center.x, Math.max(center.x - _texture.width, position.x));
-        position.y = Math.min(center.y, Math.max(center.y - _texture.height, position.y));
+        position.x = Math.min(center.x, Math.max(center.x - _canvasRealSize.x, position.x));
+        position.y = Math.min(center.y, Math.max(center.y - _canvasRealSize.y, position.y));
         return position;
     }
 
     public function capture():BitmapData {
-        const context:Context3D = Starling.current.context;
-        context.configureBackBuffer(_texture.width, _texture.height, 0);
-        context.clear();
-
-        const support:RenderSupport = new RenderSupport();
-        const bitmapData:BitmapData = new BitmapData(_texture.width, _texture.height);
-
-        const shape:Shape = new Shape();
-        shape.width = _texture.width;
-        shape.height = _texture.height;
-        const img:Image = new Image(_texture);
-        img.width =_texture.width;
-        img.height = _texture.height;
-        shape.addChild(img);
-
-        support.renderTarget = null;
-        support.setProjectionMatrix(0, 0, _texture.width, _texture.height, _texture.width, _texture.height);
-        support.clear();
-        shape.render(support, 1.0);
-        support.finishQuadBatch();
-        support.dispose();
-
-        context.drawToBitmapData(bitmapData);
-        context.present();
-
-        context.configureBackBuffer(stage.stageWidth, stage.stageHeight, 0);
-
-        return bitmapData;
+        return _bitmapData.clone();
     }
 }
 }

@@ -1,12 +1,10 @@
 package com.steffenl.superpaint.core.painting.tools.detail {
-import com.steffenl.superpaint.core.painting.detail.DrawingLayer;
 import com.steffenl.superpaint.core.painting.detail.PaintStyles;
 import com.steffenl.superpaint.core.painting.tools.ITool;
 
 import flash.geom.Point;
 
-import starling.display.Graphics;
-import starling.display.Shape;
+import flash.display.Shape;
 
 public class FakeTool implements ITool {
     public static const ID:String = "260d23c8-a242-4419-9a89-0240acee601c";

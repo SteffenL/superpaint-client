@@ -82,26 +82,24 @@ public class WorkspaceScreen extends PanelScreen {
         const loader:flash.display.Loader = new flash.display.Loader();
         loader.contentLoaderInfo.addEventListener(flash.events.Event.COMPLETE, function(event:flash.events.Event):void {
             const bitmap:Bitmap = Bitmap(loader.content);
-            createAndSetupDrawingBoard(Texture.fromBitmap(bitmap));
+            createAndSetupDrawingBoard(bitmap.bitmapData);
         });
         loader.load(new URLRequest(uri));
     }
 
     public function createNewDocument():void {
         destroyDrawingBoard();
-        createAndSetupDrawingBoard(DrawingBoard.createBlankTexture());
+        createAndSetupDrawingBoard(DrawingBoard.createBlankBitmapData());
     }
 
-    private function createAndSetupDrawingBoard(texture:Texture):void {
-        var drawingBoard:DrawingBoard = createDrawingBoard(texture);
+    private function createAndSetupDrawingBoard(bitmapData:BitmapData):void {
+        var drawingBoard:DrawingBoard = createDrawingBoard(bitmapData);
         drawingBoard.width = actualWidth;
         drawingBoard.height = actualHeight;
         drawingBoardContainerLayoutGroup.addChild(drawingBoard);
 
         _drawingBoard = drawingBoard;
-        _drawingBoard.ready.add(function():void {
-            _recordState(_drawingBoard.capture());
-        });
+        _recordState(_drawingBoard.capture());
     }
 
     private function destroyDrawingBoard():void {
@@ -261,7 +259,7 @@ public class WorkspaceScreen extends PanelScreen {
         }
 
         _lastPosition = position;
-        tool.beginAction(position, _drawingBoard.canvas, _paintStyles);
+        tool.beginAction(position, _drawingBoard.nativeCanvas, _paintStyles);
     }
 
     private function drawingBoardTouchMovedHandler(position:Point, pressure:Number):void {
@@ -279,7 +277,7 @@ public class WorkspaceScreen extends PanelScreen {
 
         // TODO: Optimize that we don't do too much work here causing bad performance while drawing
         for each (var position:Point in batchPositions) {
-            tool.updateAction(position, _drawingBoard.canvas, _paintStyles);
+            tool.updateAction(position, _drawingBoard.nativeCanvas, _paintStyles);
         }
 
         _lastPosition = position;
@@ -293,7 +291,7 @@ public class WorkspaceScreen extends PanelScreen {
 
         pointerTouchPositionLabel.text = "";
         pointerHoverPositionLabel.text = format2dPoint(position);
-        tool.endAction(position, _drawingBoard.canvas, _paintStyles);
+        tool.endAction(position, _drawingBoard.nativeCanvas, _paintStyles);
 
         _recordCurrentState();
     }
@@ -321,14 +319,14 @@ public class WorkspaceScreen extends PanelScreen {
         _toolManager.setActiveTool(id);
     }
 
-    private function createDrawingBoard(texture:Texture = null):DrawingBoard {
+    private function createDrawingBoard(bitmapData:BitmapData = null):DrawingBoard {
         var drawingBoard:DrawingBoard = new DrawingBoard();
         drawingBoard.touchBegan.add(drawingBoardTouchBeganHandler);
         drawingBoard.touchMoved.add(drawingBoardTouchMovedHandler);
         drawingBoard.touchEnded.add(drawingBoardTouchEndedHandler);
         drawingBoard.touchHover.add(drawingBoardTouchHoverHandler);
-        if (texture) {
-            drawingBoard.loadTexture(texture);
+        if (bitmapData) {
+            drawingBoard.loadBitmapData(bitmapData);
         }
 
         return drawingBoard;
@@ -362,8 +360,7 @@ public class WorkspaceScreen extends PanelScreen {
     }
 
     private function _loadState(state:DocumentState):void {
-        const texture:Texture = Texture.fromBitmapData(state.bitmapData);
-        _drawingBoard.loadTexture(texture);
+        _drawingBoard.loadBitmapData(state.bitmapData);
     }
 }
 }

@@ -4,8 +4,7 @@ import com.steffenl.superpaint.core.painting.detail.PaintStyles;
 
 import flash.geom.Point;
 
-import starling.display.Graphics;
-import starling.display.Shape;
+import flash.display.Shape;
 
 public interface ITool {
     // UUID (v4)
