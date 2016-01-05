@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="Flex" version="4">
-  <component name="FlexBuildConfigurationManager" active="superpaint">
+  <component name="FlexBuildConfigurationManager" active="app">
     <configurations>
-      <configuration name="superpaint" target-platform="Mobile" main-class="com.steffenl.superpaint.app.Main" output-file="Main.swf" output-folder="$MODULE_DIR$/out/production/superpaint">
+      <configuration name="app" target-platform="Mobile" main-class="com.steffenl.superpaint.app.Main" output-file="Main.swf" output-folder="$MODULE_DIR$/../out/production/app">
         <dependencies>
           <entries>
             <entry library-id="826d719c-9b0b-4ec7-b5c2-fa8fb3da0b4d">
@@ -54,7 +54,7 @@
       <library type="flex">
         <properties id="fd33ffcc-7650-4991-9ae0-cdbb792fc2e4" />
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../tp/air/feathers/frameworks/themes/MetalWorksMobileTheme/MetalWorksMobileTheme.swc!/" />
+          <root url="jar://$MODULE_DIR$/../../../../tp/air/feathers/frameworks/themes/MetalWorksMobileTheme/MetalWorksMobileTheme.swc!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

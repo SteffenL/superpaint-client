@@ -1,26 +1,21 @@
 package com.steffenl.superpaint.app.controls.drawingboard {
 
-import feathers.controls.TextArea;
 import feathers.core.FeathersControl;
-import feathers.events.FeathersEventType;
 
 import flash.display.BitmapData;
 import flash.display.Shape;
-import flash.display3D.Context3D;
+import flash.events.TimerEvent;
 
 
 import flash.geom.*;
+import flash.utils.Timer;
 
 import org.osflash.signals.Signal;
 
-import starling.core.RenderSupport;
-import starling.core.Starling;
 import starling.display.Image;
 import starling.display.Quad;
-import starling.display.Shape;
 
 import starling.events.*;
-import starling.textures.RenderTexture;
 import starling.textures.Texture;
 
 public class DrawingBoard extends FeathersControl {
@@ -31,7 +26,7 @@ public class DrawingBoard extends FeathersControl {
     // Dispatched when a texture has been loaded for the first time
     public const ready:Signal = new Signal();
 
-    public function get nativeCanvas():flash.display.Shape {
+    public function get nativeCanvas():Shape {
         return _nativeCanvas;
     }
 
@@ -39,10 +34,7 @@ public class DrawingBoard extends FeathersControl {
     private static const CANVAS_BACKGROUND_COLOR:uint = 0xffffff;
 
     private var _bitmapData:BitmapData;
-    private var _nativeCanvas:flash.display.Shape;
-    // Temporary (invisible) canvas that we draw to.
-    // This canvas is cleared after being rendered to a persistent texture.
-    private var _canvas:starling.display.Shape;
+    private var _nativeCanvas:Shape;
     private var _panOffset:Point = new Point(0, 0);
     private var _canvasRealSize:Point = DEFAULT_CANVAS_REAL_SIZE;
     private var _pan:Boolean = false;
@@ -54,6 +46,8 @@ public class DrawingBoard extends FeathersControl {
     // Visible canvas presented to the user.
     private var _canvasDisplayImage:Image;
     private var _loadCount:uint = 0;
+    private var _textureIsInvalid:Boolean = false;
+    private const _textureUpdaterTimer:Timer = new Timer(10, 0);
 
 
     public function loadBitmapData(bitmapData:BitmapData):void {
@@ -71,14 +65,9 @@ public class DrawingBoard extends FeathersControl {
         _texture = texture;
         _canvasRealSize = new Point(_bitmapData.width, _bitmapData.height);
 
-        _nativeCanvas = new flash.display.Shape();
+        _nativeCanvas = new Shape();
         _nativeCanvas.width = _canvasRealSize.x;
         _nativeCanvas.height = _canvasRealSize.y;
-
-        _canvas = new starling.display.Shape();
-        _canvas.width = _canvasRealSize.x;
-        _canvas.height = _canvasRealSize.y;
-        addChild(_canvas);
 
         var canvasBackground:Quad = new Quad(_canvasRealSize.x, _canvasRealSize.y, CANVAS_BACKGROUND_COLOR);
         addChild(canvasBackground);
@@ -99,6 +88,8 @@ public class DrawingBoard extends FeathersControl {
         updateClipRect();
 
         if (_loadCount++ === 0) {
+            _textureUpdaterTimer.addEventListener(TimerEvent.TIMER, textureUpdaterTimer_timerHandler);
+            _textureUpdaterTimer.start();
             ready.dispatch();
         }
     }
@@ -111,6 +102,7 @@ public class DrawingBoard extends FeathersControl {
 
     protected override function initialize():void {
         super.initialize();
+        addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
     }
 
     private function touchHandler(event:TouchEvent):void {
@@ -192,13 +184,8 @@ public class DrawingBoard extends FeathersControl {
     private function rasterizeCanvasShape():void {
         _bitmapData.draw(_nativeCanvas);
         _nativeCanvas.graphics.clear();
-
-        if (_texture) {
-            _texture.dispose();
-        }
-
-        _texture = Texture.fromBitmapData(_bitmapData);
-        _canvasDisplayImage.texture = _texture;
+        // We should recreate the rendering texture
+        _textureIsInvalid = true;
     }
 
     private function updateClipRect():void {
@@ -219,6 +206,26 @@ public class DrawingBoard extends FeathersControl {
 
     public function capture():BitmapData {
         return _bitmapData.clone();
+    }
+
+    private function textureUpdaterTimer_timerHandler(event:TimerEvent):void {
+        if (!_textureIsInvalid) {
+            return;
+        }
+
+        if (_texture) {
+            _texture.dispose();
+            _texture = null;
+        }
+
+        _texture = Texture.fromBitmapData(_bitmapData);
+        _canvasDisplayImage.texture = _texture;
+    }
+
+    private function removedFromStageHandler(event:Event):void {
+        if (_textureUpdaterTimer && _textureUpdaterTimer.running) {
+            _textureUpdaterTimer.stop();
+        }
     }
 }
 }
