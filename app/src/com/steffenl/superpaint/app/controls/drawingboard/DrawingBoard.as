@@ -220,6 +220,7 @@ public class DrawingBoard extends FeathersControl {
 
         _texture = Texture.fromBitmapData(_bitmapData);
         _canvasDisplayImage.texture = _texture;
+        _textureIsInvalid = false;
     }
 
     private function removedFromStageHandler(event:Event):void {
