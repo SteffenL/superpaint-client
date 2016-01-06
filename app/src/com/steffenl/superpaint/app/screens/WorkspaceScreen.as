@@ -83,13 +83,16 @@ public class WorkspaceScreen extends PanelScreen {
         loader.contentLoaderInfo.addEventListener(flash.events.Event.COMPLETE, function(event:flash.events.Event):void {
             const bitmap:Bitmap = Bitmap(loader.content);
             createAndSetupDrawingBoard(bitmap.bitmapData);
+            bitmap.bitmapData.dispose();
         });
         loader.load(new URLRequest(uri));
     }
 
     public function createNewDocument():void {
         destroyDrawingBoard();
-        createAndSetupDrawingBoard(DrawingBoard.createBlankBitmapData());
+        const bitmapData:BitmapData = DrawingBoard.createBlankBitmapData();
+        createAndSetupDrawingBoard(bitmapData);
+        bitmapData.dispose();
     }
 
     private function createAndSetupDrawingBoard(bitmapData:BitmapData):void {

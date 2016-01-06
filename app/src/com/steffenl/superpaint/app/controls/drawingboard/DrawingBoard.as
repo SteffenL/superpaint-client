@@ -51,6 +51,8 @@ public class DrawingBoard extends FeathersControl {
 
 
     public function loadBitmapData(bitmapData:BitmapData):void {
+        removeChildren(0, numChildren -1, true);
+
         if (_bitmapData) {
             _bitmapData.dispose();
         }
@@ -219,6 +221,10 @@ public class DrawingBoard extends FeathersControl {
         }
 
         _texture = Texture.fromBitmapData(_bitmapData, false);
+        if (_canvasDisplayImage.texture) {
+            _canvasDisplayImage.texture.dispose();
+        }
+
         _canvasDisplayImage.texture = _texture;
         _textureIsInvalid = false;
     }
