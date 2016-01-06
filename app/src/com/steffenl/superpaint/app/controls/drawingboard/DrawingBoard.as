@@ -57,7 +57,7 @@ public class DrawingBoard extends FeathersControl {
 
         _bitmapData = bitmapData.clone();
 
-        const texture:Texture = Texture.fromBitmapData(_bitmapData);
+        const texture:Texture = Texture.fromBitmapData(_bitmapData, false);
         if (_texture) {
             _texture.dispose();
         }
@@ -218,7 +218,7 @@ public class DrawingBoard extends FeathersControl {
             _texture = null;
         }
 
-        _texture = Texture.fromBitmapData(_bitmapData);
+        _texture = Texture.fromBitmapData(_bitmapData, false);
         _canvasDisplayImage.texture = _texture;
         _textureIsInvalid = false;
     }
