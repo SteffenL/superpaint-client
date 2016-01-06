@@ -21,16 +21,18 @@ public class ColorPicker extends LayoutGroup {
 
         layout = new VerticalLayout();
 
-        const presets:ListCollection = new ListCollection([
-                new ColorPresetItem(0x000000),
-                new ColorPresetItem(0x0000ff),
-                new ColorPresetItem(0x00ff00),
-                new ColorPresetItem(0x00ffff),
-                new ColorPresetItem(0xff0000),
-                new ColorPresetItem(0xff00ff),
-                new ColorPresetItem(0xffff00),
-                new ColorPresetItem(0xffffff)
-        ]);
+        const presets:ListCollection = new ListCollection(
+                [
+                    new ColorPresetItem(0x000000),
+                    new ColorPresetItem(0xffffff),
+                    new ColorPresetItem(0x808080),
+                    new ColorPresetItem(0x0000ff),
+                    new ColorPresetItem(0x00ff00),
+                    new ColorPresetItem(0x00ffff),
+                    new ColorPresetItem(0xff0000),
+                    new ColorPresetItem(0xff00ff),
+                    new ColorPresetItem(0xffff00)
+                ]);
 
         const list:ColorPresetList = new ColorPresetList();
         list.dataProvider = presets;

@@ -96,7 +96,7 @@ public class StrokeStylePicker extends LayoutGroup {
             _brushPreviewImage.texture.dispose();
         }
 
-        _previewLayoutGroup.backgroundSkin = new Quad(1, 1, invertColor(_previewColor));
+        _previewLayoutGroup.backgroundSkin = new Quad(1, 1, makeBackgroundColor(_previewColor));
 
         const halfWidth:Number = width / 2;
         const texture:Texture = BrushTextureGenerator.unfoldedCircle(this._previewColor, this._previewAlpha, halfWidth, 200, 100);
@@ -110,8 +110,14 @@ public class StrokeStylePicker extends LayoutGroup {
         updateBrushPreview(_width);
     }
 
-    private function invertColor(color:uint):uint {
-        return 0xffffffff - color;
+    private function makeBackgroundColor(fgColor:uint):uint {
+        const invertedColor:uint = fgColor ^ 0xffffff;
+        const b:uint = fgColor & 0xff;
+        const g:uint = (fgColor >> 8) & 0xff;
+        const r:uint = (fgColor >> 16) & 0xff;
+        // Take into account gray on gray
+        const x:uint = Math.abs(0x80 - ((r + g + b) / 3));
+        return (x <= 0x20) ? 0 : invertedColor;
     }
 }
 }
