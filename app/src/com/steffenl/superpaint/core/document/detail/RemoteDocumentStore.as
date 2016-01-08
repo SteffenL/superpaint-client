@@ -1,27 +1,17 @@
 package com.steffenl.superpaint.core.document.detail {
 import com.steffenl.superpaint.core.document.*;
+import com.steffenl.superpaint.server.documentstore.DocumentStoreApiEntry;
+import com.steffenl.superpaint.server.documentstore.IDocumentStoreApi;
 
-import flash.events.Event;
 
-import flash.events.IOErrorEvent;
-import flash.events.SecurityErrorEvent;
-
-import flash.net.URLLoader;
-import flash.net.URLRequest;
-
-// TODO: Decouple stuff
 public class RemoteDocumentStore implements IDocumentStore {
     private const _signals:DocumentStoreSignals = new DocumentStoreSignals();
-    private var _storePath:String;
-    private var _documentUrlLoader:URLLoader = new URLLoader();
+    private var _documentStoreApi:IDocumentStoreApi;
 
-    public static const API_URL:String = "http://192.168.0.173/";
-
-    public function RemoteDocumentStore(apiUrl:String) {
-        _storePath = apiUrl + "documents/";
-        _documentUrlLoader.addEventListener(Event.COMPLETE, documentUrlLoader_completeHandler);
-        _documentUrlLoader.addEventListener(IOErrorEvent.IO_ERROR, documentUrlLoader_ioErrorHandler);
-        _documentUrlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, documentUrlLoader_securityErrorHandler);
+    public function RemoteDocumentStore(api:IDocumentStoreApi) {
+        _documentStoreApi = api;
+        _documentStoreApi.signals().listingReady.add(listingReadyHandler);
+        _documentStoreApi.signals().listingError.add(listingErrorHandler);
     }
 
     public function signals():DocumentStoreSignals {
@@ -29,26 +19,20 @@ public class RemoteDocumentStore implements IDocumentStore {
     }
 
     public function getListing():void {
-        _documentUrlLoader.load(new URLRequest(_storePath));
+        _documentStoreApi.getListing();
     }
 
-    private function documentUrlLoader_completeHandler(event:Event):void {
-        const responseItems:Array = JSON.parse(_documentUrlLoader.data) as Array;
-
-        var entries:Vector.<IDocumentStoreEntry> = new <IDocumentStoreEntry>[];
-        for each (var f:Object in responseItems) {
-            entries.push(new LocalDocumentStoreEntry(f.fullUrl));
+    private function listingReadyHandler(entries:Vector.<DocumentStoreApiEntry>):void {
+        var newEntries:Vector.<IDocumentStoreEntry> = new <IDocumentStoreEntry>[];
+        for each (var f:Object in entries) {
+            newEntries.push(new RemoteDocumentStoreEntry(f.path));
         }
 
-        _signals.listingReady.dispatch(entries);
+        _signals.listingReady.dispatch(newEntries);
     }
 
-    private function documentUrlLoader_ioErrorHandler(event:IOErrorEvent):void {
-        _signals.listingError.dispatch(event.text);
-    }
-
-    private function documentUrlLoader_securityErrorHandler(event:SecurityErrorEvent):void {
-        _signals.listingError.dispatch(event.text);
+    private function listingErrorHandler(errorText:String):void {
+        _signals.listingError.dispatch(errorText);
     }
 }
 }
