@@ -8,7 +8,7 @@ import org.osflash.signals.Signal;
 import starling.events.Event;
 
 public class ColorPicker extends LayoutGroup {
-    public var styleChanged:Signal = new Signal(Number, Number);
+    public var onStyleChanged:Signal = new Signal(Number, Number);
 
     public function ColorPicker(color:uint, alpha:uint) {
 
@@ -21,6 +21,7 @@ public class ColorPicker extends LayoutGroup {
 
         layout = new VerticalLayout();
 
+        // Added some color presets (or "swatches").
         const presets:ListCollection = new ListCollection(
                 [
                     new ColorPresetItem(0x000000),
@@ -49,7 +50,7 @@ public class ColorPicker extends LayoutGroup {
         }
 
         const alpha:Number = 1.0;
-        styleChanged.dispatch(preset.color, alpha);
+        onStyleChanged.dispatch(preset.color, alpha);
     }
 }
 }

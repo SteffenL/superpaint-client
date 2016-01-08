@@ -8,23 +8,13 @@ import feathers.core.Application;
 
 import starling.events.Event;
 
-/*import robotlegs.bender.extensions.contextView.ContextView;
-import robotlegs.bender.extensions.contextView.ContextViewExtension;
-
-import robotlegs.bender.framework.impl.Context;
-*/
-
 public class MainApp extends Application {
     private var _navigator:StackScreenNavigator;
-
-    //private var _context:Context;
 
     public function MainApp() {
         // Apply our custom theme
         new AppTheme();
         super();
-        //_context = new Context();
-        //_context.configure(AppConfig);
     }
 
     protected override function initialize():void {

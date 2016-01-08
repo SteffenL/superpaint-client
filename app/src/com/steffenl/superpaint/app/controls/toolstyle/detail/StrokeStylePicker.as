@@ -18,7 +18,7 @@ import starling.events.Event;
 import starling.textures.Texture;
 
 public class StrokeStylePicker extends LayoutGroup {
-    public var styleChanged:Signal = new Signal(Number);
+    public var onStyleChanged:Signal = new Signal(Number);
 
     private var _widthChanged:Signal = new Signal(Number);
     private var _widthChanging:Signal = new Signal(Number);
@@ -34,12 +34,12 @@ public class StrokeStylePicker extends LayoutGroup {
     private var _previewLayoutGroup:LayoutGroup = new LayoutGroup();
 
     public function StrokeStylePicker(initialWidth:Number, initialColor:uint, initialAlpha:Number) {
-        this._width = initialWidth;
-        this._previewColor = initialColor;
-        this._previewAlpha = initialAlpha;
+        _width = initialWidth;
+        _previewColor = initialColor;
+        _previewAlpha = initialAlpha;
 
         _widthChanged.add(function(width:Number):void {
-            styleChanged.dispatch(width);
+            onStyleChanged.dispatch(width);
         });
     }
 
@@ -99,17 +99,23 @@ public class StrokeStylePicker extends LayoutGroup {
         _previewLayoutGroup.backgroundSkin = new Quad(1, 1, makeBackgroundColor(_previewColor));
 
         const halfWidth:Number = width / 2;
-        const texture:Texture = BrushTextureGenerator.unfoldedCircle(this._previewColor, this._previewAlpha, halfWidth, 200, 100);
+        const texture:Texture = BrushTextureGenerator.unfoldedCircle(_previewColor, _previewAlpha, halfWidth, 200, 100);
         _brushPreviewImage.texture = texture;
         _brushPreviewImage.readjustSize();
     }
 
     public function setColor(color:uint, alpha:Number):void {
-        this._previewColor = color;
-        this._previewAlpha = alpha;
+        _previewColor = color;
+        _previewAlpha = alpha;
         updateBrushPreview(_width);
     }
 
+    /**
+     * Makes an inverted background color from the specified foreground color.
+     * When the colors are too similar (gray on gray), the background color defaults to black.
+     * @param fgColor Foreground color.
+     * @return The inverted background color.
+     */
     private function makeBackgroundColor(fgColor:uint):uint {
         const invertedColor:uint = fgColor ^ 0xffffff;
         const b:uint = fgColor & 0xff;

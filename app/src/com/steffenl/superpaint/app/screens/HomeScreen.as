@@ -1,10 +1,8 @@
 package com.steffenl.superpaint.app.screens {
 
 import com.steffenl.superpaint.app.ScreenPushEvent;
-import com.steffenl.superpaint.app.screens.WorkspaceScreen;
 
 import feathers.controls.*;
-import feathers.controls.StackScreenNavigator;
 import feathers.controls.StackScreenNavigator;
 
 import starling.events.Event;

@@ -34,7 +34,7 @@ public class LocalDocumentStore implements IDocumentStore {
                 entries.push(new LocalDocumentStoreEntry(f.url));
             }
 
-            _signals.listingReady.dispatch(entries);
+            _signals.onListingReady.dispatch(entries);
         });
 
         dir.getDirectoryListingAsync();

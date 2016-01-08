@@ -33,13 +33,9 @@ import flash.events.Event;
 import flash.geom.*;
 import flash.net.URLRequest;
 
-import starling.core.Starling;
-
 import starling.display.DisplayObject;
-import starling.display.Image;
 
 import starling.events.Event;
-import starling.textures.Texture;
 
 public class WorkspaceScreen extends PanelScreen {
     public static const ID:String = "workspace";
@@ -52,7 +48,7 @@ public class WorkspaceScreen extends PanelScreen {
     private static const INITIAL_TOOL_ID:String = PencilTool.ID;
 
     private var _drawingBoard:DrawingBoard;
-    private var activeToolPickerList:PickerList;
+    private var _activeToolPickerList:PickerList;
 
     private var _toolManager:IToolManager = new ToolManager();
     private var _availableToolsList:ListCollection = new ListCollection();
@@ -71,14 +67,20 @@ public class WorkspaceScreen extends PanelScreen {
         _paintStyles.strokeColor = INITIAL_STROKE_COLOR;
         _paintStyles.strokeAlpha = INITIAL_STROKE_ALPHA;
 
-        _documentStateManager.stateChanged.add(function(state:DocumentState):void {
-            _loadState(state);
+        // The document state manager provides the state we are going to load
+        _documentStateManager.onStateChanged.add(function(state:DocumentState):void {
+            _loadDocumentState(state);
         });
     }
 
+    /**
+     * Loads a remote or local document.
+     * @param uri
+     */
     public function loadDocument(uri:String):void {
         destroyDrawingBoard();
 
+        // TODO: Decouple this
         const loader:flash.display.Loader = new flash.display.Loader();
         loader.contentLoaderInfo.addEventListener(flash.events.Event.COMPLETE, function(event:flash.events.Event):void {
             const bitmap:Bitmap = Bitmap(loader.content);
@@ -88,6 +90,9 @@ public class WorkspaceScreen extends PanelScreen {
         loader.load(new URLRequest(uri));
     }
 
+    /**
+     * Creates a new (blank) document and loads it.
+     */
     public function createNewDocument():void {
         destroyDrawingBoard();
         const bitmapData:BitmapData = DrawingBoard.createBlankBitmapData();
@@ -95,6 +100,10 @@ public class WorkspaceScreen extends PanelScreen {
         bitmapData.dispose();
     }
 
+    /**
+     * Creates a new drawing board and sets it up.
+     * @param bitmapData
+     */
     private function createAndSetupDrawingBoard(bitmapData:BitmapData):void {
         var drawingBoard:DrawingBoard = createDrawingBoard(bitmapData);
         drawingBoard.width = actualWidth;
@@ -102,9 +111,12 @@ public class WorkspaceScreen extends PanelScreen {
         drawingBoardContainerLayoutGroup.addChild(drawingBoard);
 
         _drawingBoard = drawingBoard;
-        _recordState(_drawingBoard.capture());
+        _recordDocumentState(_drawingBoard.capture());
     }
 
+    /**
+     * Destroys the current instance of the drawing board.
+     */
     private function destroyDrawingBoard():void {
         if (_drawingBoard) {
             drawingBoardContainerLayoutGroup.removeChild(_drawingBoard, true);
@@ -128,24 +140,21 @@ public class WorkspaceScreen extends PanelScreen {
         setupLayout();
         setupSignalHandlers();
 
+        // Do tool registration
         _toolManager.registerTools(new ToolFactory());
 
         addEventListener(FeathersEventType.CREATION_COMPLETE, creationCompleteHandler);
     }
 
+    /**
+     * Setup the UI layout, create controls and such.
+     */
     private function setupLayout():void {
-        /*var toolbarLayoutData:AnchorLayoutData = new AnchorLayoutData();
-        toolbarLayoutData.top = 0;
-        toolbarLayoutData.right = 0;
-        toolbarLayoutData.left = 0;
-        toolbarLayoutGroup.layoutData = toolbarLayoutData;*/
-
         var drawingBoardLayoutData:AnchorLayoutData = new AnchorLayoutData();
         drawingBoardLayoutData.top = 0;
         drawingBoardLayoutData.right = 0;
         drawingBoardLayoutData.bottom = 0;
         drawingBoardLayoutData.left = 0;
-        //drawingBoardLayoutData.topAnchorDisplayObject = toolbarLayoutGroup;
         drawingBoardLayoutData.bottomAnchorDisplayObject = statusBarLayoutGroup;
         drawingBoardContainerLayoutGroup.layoutData = drawingBoardLayoutData;
         addChild(drawingBoardContainerLayoutGroup);
@@ -180,7 +189,7 @@ public class WorkspaceScreen extends PanelScreen {
             undoButton.label = "Undo";
             undoButton.isEnabled = false;
             header.centerItems.push(undoButton);
-            _documentStateManager.stateChanged.add(function(state:DocumentState):void {
+            _documentStateManager.onStateChanged.add(function(state:DocumentState):void {
                 undoButton.isEnabled = _documentStateManager.hasPast();
             });
 
@@ -189,7 +198,7 @@ public class WorkspaceScreen extends PanelScreen {
             redoButton.label = "Redo";
             redoButton.isEnabled = false;
             header.centerItems.push(redoButton);
-            _documentStateManager.stateChanged.add(function(state:DocumentState):void {
+            _documentStateManager.onStateChanged.add(function(state:DocumentState):void {
                 redoButton.isEnabled = _documentStateManager.hasFuture();
             });
 
@@ -214,16 +223,20 @@ public class WorkspaceScreen extends PanelScreen {
         };
     }
 
+    /**
+     * Create and setup the toolbar.
+     * @param container Parent of the toolbar.
+     */
     private function setupToolbar(container:LayoutGroup):void {
         // TODO: Fix broken selection in the tool list
         const popupContentManager:DropDownPopUpContentManager = new DropDownPopUpContentManager();
-        activeToolPickerList = new PickerList();
-        activeToolPickerList.popUpContentManager = popupContentManager;
-        activeToolPickerList.dataProvider = _availableToolsList;
-        activeToolPickerList.listProperties.@itemRendererProperties.labelField = "text";
-        activeToolPickerList.labelField = "text";
-        activeToolPickerList.addEventListener(starling.events.Event.CHANGE, activeToolPickerList_changeHandler);
-        container.addChild(activeToolPickerList);
+        _activeToolPickerList = new PickerList();
+        _activeToolPickerList.popUpContentManager = popupContentManager;
+        _activeToolPickerList.dataProvider = _availableToolsList;
+        _activeToolPickerList.listProperties.@itemRendererProperties.labelField = "text";
+        _activeToolPickerList.labelField = "text";
+        _activeToolPickerList.addEventListener(starling.events.Event.CHANGE, activeToolPickerList_changeHandler);
+        container.addChild(_activeToolPickerList);
 
         const toolStyleButton:Button = new Button();
         toolStyleButton.label = "Style";
@@ -231,11 +244,18 @@ public class WorkspaceScreen extends PanelScreen {
         container.addChild(toolStyleButton);
     }
 
+    /**
+     * Sets up signals handlers for various things.
+     */
     private function setupSignalHandlers():void {
         _toolManager.signals().toolAdded.add(toolAddedHandler);
         _toolManager.signals().activeToolChanged.add(activeToolChangedHandler);
     }
 
+    /**
+     * A tool has been added, and should be reflected in the UI.
+     * @param tool
+     */
     private function toolAddedHandler(tool:ITool):void {
         const index:int = _availableToolsList.length;
         _availableToolsList.push({ id: tool.getId(), text: tool.getDisplayName() });
@@ -243,6 +263,11 @@ public class WorkspaceScreen extends PanelScreen {
         _availableToolsListIndicesToId[index] = tool.getId();
     }
 
+    /**
+     * The active tool changed, and should be reflected in the UI.
+     * @param tool
+     * @param oldTool
+     */
     private function activeToolChangedHandler(tool:ITool, oldTool:ITool):void {
         // TODO: Check whether this can happen, and whether there is a better method to change the selection without
         // dispatching a new selection event.
@@ -252,7 +277,7 @@ public class WorkspaceScreen extends PanelScreen {
             return;
         }*/
 
-        activeToolPickerList.selectedIndex = newIndex;
+        _activeToolPickerList.selectedIndex = newIndex;
     }
 
     private function drawingBoardTouchBeganHandler(position:Point, pressure:Number):void {
@@ -296,7 +321,7 @@ public class WorkspaceScreen extends PanelScreen {
         pointerHoverPositionLabel.text = format2dPoint(position);
         tool.endAction(position, _drawingBoard.nativeCanvas, _paintStyles);
 
-        _recordCurrentState();
+        _recordCurrentDocumentState();
     }
 
     private function drawingBoardTouchHoverHandler(position:Point):void {
@@ -322,12 +347,17 @@ public class WorkspaceScreen extends PanelScreen {
         _toolManager.setActiveTool(id);
     }
 
+    /**
+     * Creates a new drawing board, initializes it and loads the specified bitmap data.
+     * @param bitmapData
+     * @return The new drawing board.
+     */
     private function createDrawingBoard(bitmapData:BitmapData = null):DrawingBoard {
         var drawingBoard:DrawingBoard = new DrawingBoard();
-        drawingBoard.touchBegan.add(drawingBoardTouchBeganHandler);
-        drawingBoard.touchMoved.add(drawingBoardTouchMovedHandler);
-        drawingBoard.touchEnded.add(drawingBoardTouchEndedHandler);
-        drawingBoard.touchHover.add(drawingBoardTouchHoverHandler);
+        drawingBoard.onTouchBegan.add(drawingBoardTouchBeganHandler);
+        drawingBoard.onTouchMoved.add(drawingBoardTouchMovedHandler);
+        drawingBoard.onTouchEnded.add(drawingBoardTouchEndedHandler);
+        drawingBoard.onTouchHover.add(drawingBoardTouchHoverHandler);
         if (bitmapData) {
             drawingBoard.loadBitmapData(bitmapData);
         }
@@ -347,13 +377,20 @@ public class WorkspaceScreen extends PanelScreen {
         _documentStateManager.stepForward();
     }
 
-    private function _recordCurrentState():void {
+    /**
+     * Records the current document state into the state manager.
+     */
+    private function _recordCurrentDocumentState():void {
         // TODO: Decouple stuff
         const bitmapData:BitmapData = _drawingBoard.capture();
-        _recordState(bitmapData);
+        _recordDocumentState(bitmapData);
     }
 
-    private function _recordState(bitmapData:BitmapData):void {
+    /**
+     * Records the specified document state into the state manager.
+     * @param bitmapData
+     */
+    private function _recordDocumentState(bitmapData:BitmapData):void {
         // TODO: Decouple stuff
         if (bitmapData) {
             var state:DocumentState = new DocumentState();
@@ -362,7 +399,11 @@ public class WorkspaceScreen extends PanelScreen {
         }
     }
 
-    private function _loadState(state:DocumentState):void {
+    /**
+     * Load the specified document state.
+     * @param state
+     */
+    private function _loadDocumentState(state:DocumentState):void {
         _drawingBoard.loadBitmapData(state.bitmapData);
     }
 }

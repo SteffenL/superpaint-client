@@ -3,8 +3,6 @@ import com.steffenl.superpaint.core.painting.IToolManager;
 import com.steffenl.superpaint.core.painting.ToolManagerSignals;
 import com.steffenl.superpaint.core.painting.tools.*;
 
-import org.osflash.signals.Signal;
-
 public class ToolManager implements IToolManager {
     private var _signals:ToolManagerSignals = new ToolManagerSignals();
 

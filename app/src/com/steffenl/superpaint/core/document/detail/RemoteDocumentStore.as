@@ -10,8 +10,8 @@ public class RemoteDocumentStore implements IDocumentStore {
 
     public function RemoteDocumentStore(api:IDocumentStoreApi) {
         _documentStoreApi = api;
-        _documentStoreApi.signals().listingReady.add(listingReadyHandler);
-        _documentStoreApi.signals().listingError.add(listingErrorHandler);
+        _documentStoreApi.signals().onListingReady.add(listingReadyHandler);
+        _documentStoreApi.signals().onListingError.add(listingErrorHandler);
     }
 
     public function signals():DocumentStoreSignals {
@@ -28,11 +28,11 @@ public class RemoteDocumentStore implements IDocumentStore {
             newEntries.push(new RemoteDocumentStoreEntry(f.path));
         }
 
-        _signals.listingReady.dispatch(newEntries);
+        _signals.onListingReady.dispatch(newEntries);
     }
 
     private function listingErrorHandler(errorText:String):void {
-        _signals.listingError.dispatch(errorText);
+        _signals.onListingError.dispatch(errorText);
     }
 }
 }

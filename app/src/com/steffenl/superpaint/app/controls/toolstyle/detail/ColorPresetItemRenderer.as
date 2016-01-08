@@ -12,6 +12,10 @@ import starling.events.Touch;
 import starling.events.TouchEvent;
 import starling.events.TouchPhase;
 
+/**
+ * Item rendered for the color preset list.
+ * This class has mostly been modified from the gallery example from Feathers.
+ */
 public class ColorPresetItemRenderer extends FeathersControl implements IListItemRenderer {
     public var fillQuad:Quad;
 

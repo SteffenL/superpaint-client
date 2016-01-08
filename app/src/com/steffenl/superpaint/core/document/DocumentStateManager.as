@@ -8,7 +8,7 @@ import org.osflash.signals.Signal;
 public class DocumentStateManager {
     private static const MAX_STATE_HISTORY:uint = 50;
 
-    public var stateChanged:Signal = new Signal(DocumentState);
+    public var onStateChanged:Signal = new Signal(DocumentState);
 
     private var _history:Vector.<DocumentState> = new <DocumentState>[];
     private var _historyIndex:int = -1;
@@ -40,7 +40,7 @@ public class DocumentStateManager {
         }
 
         _history.push(state);
-        stateChanged.dispatch(getState());
+        onStateChanged.dispatch(getState());
     }
 
     public function getState():DocumentState {
@@ -72,7 +72,7 @@ public class DocumentStateManager {
         }
 
         --_historyIndex;
-        stateChanged.dispatch(getState());
+        onStateChanged.dispatch(getState());
     }
 
     /**
@@ -84,7 +84,7 @@ public class DocumentStateManager {
         }
 
         ++_historyIndex;
-        stateChanged.dispatch(getState());
+        onStateChanged.dispatch(getState());
     }
 
     /**

@@ -16,7 +16,7 @@ public class ColorPresetList extends List {
 
     private function creationCompleteHandler(event:Event):void {
         styleNameList.add(LIST_STYLE_NAME);
-        this.layout = createListLayout();
+        layout = createListLayout();
         verticalScrollPolicy = List.SCROLL_POLICY_OFF;
         horizontalScrollPolicy = List.SCROLL_POLICY_OFF;
         itemRendererType = ColorPresetItemRenderer;

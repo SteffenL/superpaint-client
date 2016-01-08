@@ -38,15 +38,15 @@ public class DocumentStoreApi implements IDocumentStoreApi {
             entries.push(new DocumentStoreApiEntry(f.id, f.fullUrl));
         }
 
-        _signals.listingReady.dispatch(entries);
+        _signals.onListingReady.dispatch(entries);
     }
 
     private function documentUrlLoader_ioErrorHandler(event:IOErrorEvent):void {
-        _signals.listingError.dispatch(event.text);
+        _signals.onListingError.dispatch(event.text);
     }
 
     private function documentUrlLoader_securityErrorHandler(event:SecurityErrorEvent):void {
-        _signals.listingError.dispatch(event.text);
+        _signals.onListingError.dispatch(event.text);
     }
 }
 }

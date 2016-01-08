@@ -25,8 +25,8 @@ public class DocumentStoreScreenBase extends PanelScreen {
         super();
 
         _documentStore = documentStore;
-        _documentStore.signals().listingReady.add(listingReadyHandler);
-        _documentStore.signals().listingError.add(listingErrorHandler);
+        _documentStore.signals().onListingReady.add(listingReadyHandler);
+        _documentStore.signals().onListingError.add(listingErrorHandler);
     }
 
     protected override function initialize():void {

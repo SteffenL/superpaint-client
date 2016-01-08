@@ -1,5 +1,4 @@
 package com.steffenl.superpaint.core.painting.detail {
-import flash.geom.Point;
 
 import starling.display.Shape;
 import starling.textures.RenderTexture;

@@ -14,10 +14,10 @@ public class GalleryList extends List {
     public static const VERTICAL_LAYOUT:uint = 1;
     public static const HORIZONTAL_LAYOUT:uint = 2;
 
-    private var layoutInt:uint;
+    private var _layoutInt:uint;
 
     public function GalleryList(layout:uint = HORIZONTAL_LAYOUT) {
-        layoutInt = layout;
+        _layoutInt = layout;
         addEventListener(FeathersEventType.CREATION_COMPLETE, creationCompleteHandler);
     }
 
@@ -51,10 +51,10 @@ public class GalleryList extends List {
 
     private function creationCompleteHandler(event:Event):void {
         styleNameList.add(THUMBNAIL_LIST_STYLE_NAME);
-        this.layout = createListLayout(layoutInt);
+        layout = createListLayout(_layoutInt);
 
-        horizontalScrollPolicy = this.layoutInt === HORIZONTAL_LAYOUT ? List.SCROLL_POLICY_ON : List.SCROLL_POLICY_OFF;
-        verticalScrollPolicy = this.layoutInt === VERTICAL_LAYOUT ? List.SCROLL_POLICY_ON : List.SCROLL_POLICY_OFF;
+        horizontalScrollPolicy = _layoutInt === HORIZONTAL_LAYOUT ? List.SCROLL_POLICY_ON : List.SCROLL_POLICY_OFF;
+        verticalScrollPolicy = _layoutInt === VERTICAL_LAYOUT ? List.SCROLL_POLICY_ON : List.SCROLL_POLICY_OFF;
 
         snapScrollPositionsToPixels = true;
         itemRendererType = GalleryItemRenderer;
