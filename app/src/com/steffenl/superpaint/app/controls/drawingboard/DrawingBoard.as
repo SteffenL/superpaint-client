@@ -1,6 +1,8 @@
 package com.steffenl.superpaint.app.controls.drawingboard {
 
+import feathers.controls.LayoutGroup;
 import feathers.core.FeathersControl;
+import feathers.events.FeathersEventType;
 
 import flash.display.BitmapData;
 import flash.display.Shape;
@@ -30,7 +32,7 @@ public class DrawingBoard extends FeathersControl {
     public const onTouchEnded:Signal = new Signal(Point, Number);
     // Dispatched when the "cursor" is hovering/moving on (not touching) the canvas.
     public const onTouchHover:Signal = new Signal(Point);
-    // Dispatched when a texture has been loaded for the first time.
+    // Dispatched when the UI has been created.
     public const onReady:Signal = new Signal();
 
     // Easy access to the canvas (shape) for tools and such to manipulate the canvas.
@@ -46,7 +48,7 @@ public class DrawingBoard extends FeathersControl {
     // The internal canvas itself, where vector graphics added; should be rasterized when changed.
     private var _nativeCanvas:Shape;
     // The current panning offset.
-    private var _panOffset:Point = new Point(0, 0);
+    private var _canvasPosition:Point = new Point(0, 0);
     // The real/full size of the canvas even when scaled.
     private var _canvasRealSize:Point = DEFAULT_CANVAS_REAL_SIZE;
     // Indicates whether we are currently handling panning.
@@ -59,12 +61,13 @@ public class DrawingBoard extends FeathersControl {
     private var _texture:Texture;
     // Visible canvas presented to the user.
     private var _canvasDisplayImage:Image;
-    // Indicates whether we have dispatched the notification that bitmap data has been loaded for the first time.
-    private var _readyNotified:Boolean = false;
     // Indicates whether the render texture is invalid and must be updated. It is invalid after the canvas has been changed and rasterized.
     private var _textureIsInvalid:Boolean = false;
     // Timer to update the render texture when needed.
     private const _textureUpdaterTimer:Timer = new Timer(10, 0);
+    // A container for the canvas and other things that should be positioned relative to the canvas.
+    private var _canvasContainer:LayoutGroup = new LayoutGroup();
+    private var _hasLoadedBitmapDataOnce:Boolean = false;
 
 
     /**
@@ -72,8 +75,6 @@ public class DrawingBoard extends FeathersControl {
      * @param bitmapData
      */
     public function loadBitmapData(bitmapData:BitmapData):void {
-        removeChildren(0, numChildren -1, true);
-
         if (_bitmapData) {
             _bitmapData.dispose();
         }
@@ -92,31 +93,30 @@ public class DrawingBoard extends FeathersControl {
         _nativeCanvas.width = _canvasRealSize.x;
         _nativeCanvas.height = _canvasRealSize.y;
 
-        var canvasBackground:Quad = new Quad(_canvasRealSize.x, _canvasRealSize.y, CANVAS_BACKGROUND_COLOR);
-        addChild(canvasBackground);
+        _canvasContainer.removeChildren(0, _canvasContainer.numChildren -1, true);
+        _canvasContainer.width = _canvasRealSize.x;
+        _canvasContainer.height = _canvasRealSize.y;
 
         if (_canvasDisplayImage) {
             _canvasDisplayImage.dispose();
         }
 
         _canvasDisplayImage = new Image(_texture);
-        _canvasDisplayImage.x = _panOffset.x;
-        _canvasDisplayImage.y = _panOffset.y;
         _canvasDisplayImage.width = _canvasRealSize.x;
         _canvasDisplayImage.height = _canvasRealSize.y;
-        _canvasDisplayImage.addEventListener(TouchEvent.TOUCH, touchHandler);
-        addChild(_canvasDisplayImage);
+        _canvasContainer.addChild(_canvasDisplayImage);
 
         rasterizeCanvasShape();
-        updateClipRect();
 
-        // Lazy setup of a few things, including notifying that an image has been loaded and is ready for use.
-        if (!_readyNotified) {
-            _textureUpdaterTimer.addEventListener(TimerEvent.TIMER, textureUpdaterTimer_timerHandler);
-            _textureUpdaterTimer.start();
-            onReady.dispatch();
-            _readyNotified = true;
+        // Position the canvas depending on whether the bitmap data is being loaded for the first time or simply replacing the current one
+        if (_hasLoadedBitmapDataOnce) {
+            setCanvasPosition(_canvasPosition);
         }
+        else {
+            centerCanvas();
+        }
+
+        _hasLoadedBitmapDataOnce = true;
     }
 
     /**
@@ -124,12 +124,24 @@ public class DrawingBoard extends FeathersControl {
      * @return
      */
     public static function createBlankBitmapData():BitmapData {
-        return new BitmapData(DEFAULT_CANVAS_REAL_SIZE.x, DEFAULT_CANVAS_REAL_SIZE.y);
+        return new BitmapData(DEFAULT_CANVAS_REAL_SIZE.x, DEFAULT_CANVAS_REAL_SIZE.y, true, 0x00ffffff);
     }
 
     protected override function initialize():void {
         super.initialize();
+
+        addEventListener(FeathersEventType.CREATION_COMPLETE, creationCompleteHandler);
         addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
+
+        // Add an invisible background for catching touch events
+        const backgroundQuad:Quad = new Quad(stage.stageWidth, stage.stageHeight);
+        backgroundQuad.alpha = 0;
+        backgroundQuad.addEventListener(TouchEvent.TOUCH, touchHandler);
+        addChild(backgroundQuad);
+
+        _canvasContainer.backgroundSkin = new Quad(1, 1, CANVAS_BACKGROUND_COLOR);
+        _canvasContainer.addEventListener(TouchEvent.TOUCH, touchHandler);
+        addChild(_canvasContainer);
     }
 
     /**
@@ -138,7 +150,7 @@ public class DrawingBoard extends FeathersControl {
      */
     private function touchHandler(event:TouchEvent):void {
         var touches:Vector.<Touch> = new <Touch>[];
-        event.getTouches(_canvasDisplayImage, null, touches);
+        event.getTouches(this, null, touches);
 
         if (touches.length === 0) {
             return;
@@ -178,13 +190,7 @@ public class DrawingBoard extends FeathersControl {
                         _touchPosition.y - _lastTouchPosition.y
                 );
 
-                _panOffset.x += offset.x;
-                _panOffset.y += offset.y;
-
-                _panOffset = sanitizeCanvasPosition(_panOffset);
-                _canvasDisplayImage.x = _panOffset.x;
-                _canvasDisplayImage.y = _panOffset.y;
-                updateClipRect();
+                moveCanvas(offset);
             }
         }
         else {
@@ -229,15 +235,29 @@ public class DrawingBoard extends FeathersControl {
     }
 
     /**
-     * We use clipRect to hide everything around the canvas itself.
+     * Centers the canvas.
      */
-    private function updateClipRect():void {
-        clipRect = new Rectangle(
-                Math.max(0, _panOffset.x),
-                Math.max(0, _panOffset.y),
-                Math.min(_panOffset.x + _canvasRealSize.x, actualWidth),
-                Math.min(_panOffset.y + _canvasRealSize.y, actualHeight)
-        );
+    private function centerCanvas():void {
+        const newOffset:Point = new Point((actualWidth - _canvasRealSize.x) / 2, (actualHeight - _canvasRealSize.y) / 2);
+        setCanvasPosition(newOffset);
+    }
+
+    /**
+     * Sets the position of the canvas (relative to its current position).
+     * @param offset
+     */
+    private function moveCanvas(offset:Point):void {
+        setCanvasPosition(new Point(_canvasPosition.x + offset.x, _canvasPosition.y + offset.y));
+    }
+
+    /**
+     * Sets the position of the canvas (relative to 0x0).
+     * @param position
+     */
+    private function setCanvasPosition(position:Point):void {
+        _canvasPosition = sanitizeCanvasPosition(position);
+        _canvasContainer.x = _canvasPosition.x;
+        _canvasContainer.y = _canvasPosition.y;
     }
 
     /**
@@ -249,6 +269,8 @@ public class DrawingBoard extends FeathersControl {
         const center:Point = new Point(actualWidth >> 1, actualHeight >> 1);
         position.x = Math.min(center.x, Math.max(center.x - _canvasRealSize.x, position.x));
         position.y = Math.min(center.y, Math.max(center.y - _canvasRealSize.y, position.y));
+        position.x = Math.floor(position.x);
+        position.y = Math.floor(position.y);
         return position;
     }
 
@@ -257,6 +279,10 @@ public class DrawingBoard extends FeathersControl {
      * @return A clone of the current bitmap data.
      */
     public function capture():BitmapData {
+        if (!_bitmapData) {
+            throw new Error("No bitmap data is loaded");
+        }
+
         return _bitmapData.clone();
     }
 
@@ -285,9 +311,17 @@ public class DrawingBoard extends FeathersControl {
 
     private function removedFromStageHandler(event:Event):void {
         // If we don't stop the timer when we have been removed from the stage, the timer will keep running.
-        if (_textureUpdaterTimer && _textureUpdaterTimer.running) {
+        if (_textureUpdaterTimer.running) {
             _textureUpdaterTimer.stop();
         }
+
+        stage.removeEventListener(TouchEvent.TOUCH, touchHandler);
+    }
+
+    private function creationCompleteHandler(event:Event):void {
+        _textureUpdaterTimer.addEventListener(TimerEvent.TIMER, textureUpdaterTimer_timerHandler);
+        _textureUpdaterTimer.start();
+        onReady.dispatch();
     }
 }
 }

@@ -6,7 +6,7 @@
     <screens:layout>
         <f:AnchorLayout/>
     </screens:layout>
-    <f:LayoutGroup id="drawingBoardContainerLayoutGroup"/>
+    <f:LayoutGroup id="drawingBoardContainerLayoutGroup" clipContent="true"/>
     <f:LayoutGroup id="statusBarLayoutGroup">
         <f:layout>
             <f:HorizontalLayout/>

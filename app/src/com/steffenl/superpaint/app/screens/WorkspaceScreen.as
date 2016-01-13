@@ -22,6 +22,7 @@ import feathers.controls.popups.DropDownPopUpContentManager;
 import feathers.core.IFeathersControl;
 import feathers.data.ListCollection;
 import feathers.events.FeathersEventType;
+import feathers.layout.AnchorLayout;
 import feathers.layout.AnchorLayoutData;
 
 import flash.display.Bitmap;
@@ -34,6 +35,7 @@ import flash.geom.*;
 import flash.net.URLRequest;
 
 import starling.display.DisplayObject;
+import starling.display.Quad;
 
 import starling.events.Event;
 
@@ -85,7 +87,6 @@ public class WorkspaceScreen extends PanelScreen {
         loader.contentLoaderInfo.addEventListener(flash.events.Event.COMPLETE, function(event:flash.events.Event):void {
             const bitmap:Bitmap = Bitmap(loader.content);
             createAndSetupDrawingBoard(bitmap.bitmapData);
-            bitmap.bitmapData.dispose();
         });
         loader.load(new URLRequest(uri));
     }
@@ -97,7 +98,6 @@ public class WorkspaceScreen extends PanelScreen {
         destroyDrawingBoard();
         const bitmapData:BitmapData = DrawingBoard.createBlankBitmapData();
         createAndSetupDrawingBoard(bitmapData);
-        bitmapData.dispose();
     }
 
     /**
@@ -105,13 +105,25 @@ public class WorkspaceScreen extends PanelScreen {
      * @param bitmapData
      */
     private function createAndSetupDrawingBoard(bitmapData:BitmapData):void {
-        var drawingBoard:DrawingBoard = createDrawingBoard(bitmapData);
-        drawingBoard.width = actualWidth;
-        drawingBoard.height = actualHeight;
+        var drawingBoard:DrawingBoard = createDrawingBoard();
+        drawingBoard.width = drawingBoardContainerLayoutGroup.width;
+        drawingBoard.height = drawingBoardContainerLayoutGroup.height;
         drawingBoardContainerLayoutGroup.addChild(drawingBoard);
 
+        // Load the specified bitmap data when the drawing board is ready for it
+        if (bitmapData) {
+            const listener:Function = function():void {
+                drawingBoard.onReady.remove(listener);
+                drawingBoard.loadBitmapData(bitmapData);
+                // Make sure to dispose the temporary bitmap data
+                bitmapData.dispose();
+                _recordDocumentState(drawingBoard.capture());
+            };
+
+            drawingBoard.onReady.add(listener);
+        }
+
         _drawingBoard = drawingBoard;
-        _recordDocumentState(_drawingBoard.capture());
     }
 
     /**
@@ -150,19 +162,12 @@ public class WorkspaceScreen extends PanelScreen {
      * Setup the UI layout, create controls and such.
      */
     private function setupLayout():void {
-        var drawingBoardLayoutData:AnchorLayoutData = new AnchorLayoutData();
-        drawingBoardLayoutData.top = 0;
-        drawingBoardLayoutData.right = 0;
-        drawingBoardLayoutData.bottom = 0;
-        drawingBoardLayoutData.left = 0;
+        var drawingBoardLayoutData:AnchorLayoutData = new AnchorLayoutData(0, 0, 0, 0);
         drawingBoardLayoutData.bottomAnchorDisplayObject = statusBarLayoutGroup;
         drawingBoardContainerLayoutGroup.layoutData = drawingBoardLayoutData;
         addChild(drawingBoardContainerLayoutGroup);
 
-        var statusBarLayoutData:AnchorLayoutData = new AnchorLayoutData();
-        statusBarLayoutData.right = 0;
-        statusBarLayoutData.bottom = 0;
-        statusBarLayoutData.left = 0;
+        var statusBarLayoutData:AnchorLayoutData = new AnchorLayoutData(NaN, 0, 0, 0);
         statusBarLayoutGroup.layoutData = statusBarLayoutData;
 
 
@@ -348,19 +353,15 @@ public class WorkspaceScreen extends PanelScreen {
     }
 
     /**
-     * Creates a new drawing board, initializes it and loads the specified bitmap data.
-     * @param bitmapData
+     * Creates a new drawing board.
      * @return The new drawing board.
      */
-    private function createDrawingBoard(bitmapData:BitmapData = null):DrawingBoard {
+    private function createDrawingBoard():DrawingBoard {
         var drawingBoard:DrawingBoard = new DrawingBoard();
         drawingBoard.onTouchBegan.add(drawingBoardTouchBeganHandler);
         drawingBoard.onTouchMoved.add(drawingBoardTouchMovedHandler);
         drawingBoard.onTouchEnded.add(drawingBoardTouchEndedHandler);
         drawingBoard.onTouchHover.add(drawingBoardTouchHoverHandler);
-        if (bitmapData) {
-            drawingBoard.loadBitmapData(bitmapData);
-        }
 
         return drawingBoard;
     }
