@@ -60,7 +60,13 @@ public class DocumentStoreScreenBase extends PanelScreen {
             var editButton:Button = new Button();
             editButton.styleNameList.add(Button.ALTERNATE_STYLE_NAME_FORWARD_BUTTON);
             editButton.label = "Edit";
+            editButton.isEnabled = false;
             editButton.addEventListener(Event.TRIGGERED, editButton_triggeredHandler);
+            galleryList.addEventListener(Event.CHANGE, function(event:Event):void {
+                var list:GalleryList = GalleryList(event.currentTarget);
+                var item:GalleryItem = GalleryItem(list.selectedItem);
+                editButton.isEnabled = !!item;
+            });
             header.rightItems.push(editButton);
 
 
